@@ -5,8 +5,11 @@ from sklearn import tree
 from sklearn.tree import DecisionTreeClassifier
 
 df = pd.read_csv('data.csv')
-#TODO: What are the first 2 columns?
+#TODO: What is the first column? Maybe names or sth?
+#TODO: The very first originates from pandas...
 df.replace(' ?', np.nan, inplace=True)
+df = df.dropna()
+
 
 for i in df:
     df[i] = df[i].map(lambda x: x.lstrip(' ').rstrip(' ') if isinstance(x, str) else x)
@@ -18,16 +21,13 @@ df.replace('S', 0, inplace = True)
 df.replace('C', 1, inplace = True)
 df.replace('Q', 2, inplace = True)
 
-df = df.dropna()
+
+#print(df.head(50))
 
 
-print(df.head(50))
-
-#TODO doch nicht SO einfach ;D
-"""
-features = df[["pclass", "sex", "age", "sibsp", "parch", "fare", "embarked"]]
+features = list(df.columns[2:9])
+#print(features)
 y = df["survived"]
 X = df[features]
 dt = DecisionTreeClassifier(min_samples_split=20, random_state=99)
 dt.fit(X, y)
-"""
