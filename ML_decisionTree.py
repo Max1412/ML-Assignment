@@ -223,3 +223,53 @@ def uniquecounts(rows):
       results[r]+=1
    return results
 """
+
+def divide_set(dataframe, name):
+	var_list = []
+	for i in dataframe[name]:
+		if i not in var_list:
+			var_list.append(i)
+	
+	dataset_list = []
+	for i in var_list:
+		df = dataframe[dataframe[name] == i]
+		dataset_list.append(df)
+
+	return dataset_list
+	
+	'''
+	T: whole dataset (before the split
+	dfs: list of datasets (after the spilt)
+	'''
+def information_gain(T, dfs)
+	information_gain = entropy(T)
+	for i in dfs:
+		information_gain -= (len(i)/len(T)) * entropy(i)
+	
+	return information_gain
+	
+class node:
+	def __init__(self, dataset)
+		self.dataset=dataset
+		self.entropy=entropy(dataset)
+		self.children=[]
+		self.isleaf = is_leaf()
+		if not isleaf:
+			spilt(self)
+		
+	def is_leaf(self):
+		return (entropy(selft.dataset) == 0)
+	
+	def split(self)
+		feature_names = dataframe[features]
+		max_ig = 0
+		result_dfs = []
+		for feature in feature_names:
+			pot_child_dfs = divide_set(dataframe, feature)
+			ig = information_gain(self.dataset, pot_child_dfs)
+			if ig > max_ig:
+				result_dfs = pot_child_dfs
+		for x in result_dfs:
+			new_node = node(x)
+			self.children.append(new_node)
+				
