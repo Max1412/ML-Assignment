@@ -258,7 +258,7 @@ class node:
 			spilt(self)
 		
 	def is_leaf(self):
-		return (entropy(selft.dataset) == 0)
+		return (entropy(self.dataset) == 0)
 	
 	def split(self)
 		feature_names = dataframe[features]
