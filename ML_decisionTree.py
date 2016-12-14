@@ -248,6 +248,9 @@ def information_gain(T, dfs)
 	
 	return information_gain
 	
+# TODO add predict, fit methods according to sklearn
+# maybe just "use" this node which automatically recursively builds the tree
+# inside a classifier class?
 class node:
 	def __init__(self, dataset)
 		self.dataset=dataset
@@ -272,4 +275,4 @@ class node:
 		for x in result_dfs:
 			new_node = node(x)
 			self.children.append(new_node)
-				
+			
