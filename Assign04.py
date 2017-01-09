@@ -88,11 +88,6 @@ plot_df['age'].replace(0, "child", inplace=True)
 plot_df['age'].replace(1, "middle-aged", inplace=True)
 plot_df['age'].replace(2, "old", inplace=True)
 
-titanic_df['age'] = titanic_df['age'].astype(np.int64)
-titanic_df.loc[titanic_df['age'] < 15, 'age'] = 0
-titanic_df.loc[(titanic_df['age'] >= 15) & (titanic_df['age'] <= 60), 'age'] = 1
-titanic_df.loc[titanic_df['age'] > 60, 'age'] = 2
-
 plot_df['survived'].replace('died', 0, inplace=True)
 plot_df['survived'].replace('survived', 1, inplace=True)
 
@@ -117,11 +112,39 @@ ax = sns.factorplot(x="age", y="survived", col="pclass", data=plot_df, kind="bar
 ax.set_axis_labels("", "Chance of survival").set_titles("Class {col_name}").despine(left=True)
 plt.show()
 
+# create categorical dataframe
+titanic_categorical = plot_df.copy()
+
+titanic_categorical['survived'].replace(0, 'died', inplace=True)
+titanic_categorical['survived'].replace(1, 'survived', inplace=True)
+
+titanic_categorical['fare'] = titanic_categorical['fare']
+titanic_categorical.loc[titanic_categorical['fare'] == 0, 'fare'] = 0
+titanic_categorical.loc[(titanic_categorical['fare'] > 0) & (titanic_categorical['fare'] <= 32), 'fare'] = 1
+titanic_categorical.loc[(titanic_categorical['fare'] > 32) & (titanic_categorical['fare'] < 263), 'fare'] = 2
+titanic_categorical.loc[titanic_categorical['fare'] >= 263, 'fare'] = 3
+titanic_categorical['fare'].replace(0, "worker", inplace=True)
+titanic_categorical['fare'].replace(1, "low-range", inplace=True)
+titanic_categorical['fare'].replace(2, "mid-range", inplace=True)
+titanic_categorical['fare'].replace(3, "high-range", inplace=True)
+
+titanic_numeric = titanic_df.copy()
+titanic_numeric.loc[titanic_numeric['age'] < 15, 'age'] = 0
+titanic_numeric.loc[(titanic_numeric['age'] >= 15) & (titanic_numeric['age'] <= 60), 'age'] = 1
+titanic_numeric.loc[titanic_numeric['age'] > 60, 'age'] = 2
+titanic_numeric.loc[titanic_numeric['fare'] == 0, 'fare'] = 0
+titanic_numeric.loc[(titanic_numeric['fare'] > 0) & (titanic_numeric['fare'] <= 32), 'fare'] = 1
+titanic_numeric.loc[(titanic_numeric['fare'] > 32) & (titanic_numeric['fare'] < 263), 'fare'] = 2
+titanic_numeric.loc[titanic_numeric['fare'] >= 263, 'fare'] = 3
+
+# rm sibsp and parch
+titanic_numeric.drop(titanic_numeric.columns[[4,5]], axis=1, inplace=True)
+
 """
 Task 2
 """
 
-features = list(titanic_df.columns[2:9])
+features = list(titanic_df.columns[1:])
 print(features)
 y = titanic_df["survived"]
 X = titanic_df[features]
@@ -137,16 +160,44 @@ print(accuracy_score(y, dt.predict(X)))
 print("Decision Tree Classifier")
 print(accuracy_score(y_test, res))
 
+dot_data = tree.export_graphviz(dt, out_file=None,
+                                feature_names=features,
+                                class_names=["died","survived"],
+                                filled=True, rounded=True,
+                                special_characters=True)
+
+
+graph = pydotplus.graph_from_dot_data(dot_data)
+graph.write_png('tree.png')
+
+
+# numeric
+
+features = list(titanic_numeric.columns[1:])
+print(features)
+y = titanic_numeric["survived"]
+X = titanic_numeric[features]
+
+x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1 )
+
+dt = DecisionTreeClassifier()
+dt.fit(X, y)
+
+res = dt.predict(x_test)
+
+print(accuracy_score(y, dt.predict(X)))
+print("Decision Tree Classifier")
+print(accuracy_score(y_test, res))
 
 dot_data = tree.export_graphviz(dt, out_file=None,
                          feature_names=features,
-                         class_names=["surv","died"],
+                         class_names=["died","survived"],
                          filled=True, rounded=True,
                          special_characters=True)
 
 
 graph = pydotplus.graph_from_dot_data(dot_data)
-graph.write_png('tree.png')
+graph.write_png('tree_numeric.png')
 
 """
  Image(graph.create_png())          in iPython
