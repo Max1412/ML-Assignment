@@ -1,12 +1,13 @@
-#from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
 import seaborn as sns
 sns.set_style('whitegrid')
-#from sklearn import tree
-#from sklearn.tree import DecisionTreeClassifier
-#from sklearn.metrics import accuracy_score
+from sklearn import tree
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
+import pydotplus
 #%matplotlib inline
 
 """
@@ -106,4 +107,41 @@ ax.set(xlabel="Age", ylabel="Chance of survival")
 plt.show()
 
 
+"""
+Task 2
+"""
+
+features = list(titanic_df.columns[2:9])
+print(features)
+y = titanic_df["survived"]
+X = titanic_df[features]
+
+x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1 )
+
+dt = DecisionTreeClassifier()
+dt.fit(X, y)
+
+res = dt.predict(x_test)
+
+print(accuracy_score(y, dt.predict(X)))
+print("Decision Tree Classifier")
+print(accuracy_score(y_test, res))
+
+
+dot_data = tree.export_graphviz(dt, out_file=None,
+                         feature_names=features,
+                         class_names=["surv","died"],
+                         filled=True, rounded=True,
+                         special_characters=True)
+
+
+graph = pydotplus.graph_from_dot_data(dot_data)
+graph.write_png('tree.png')
+
+"""
+ Image(graph.create_png())          in iPython
+"""
+
+
 print(titanic_df.head(50))
+
