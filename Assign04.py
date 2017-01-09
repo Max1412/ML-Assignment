@@ -69,11 +69,13 @@ plot_df['survived'].replace(1, 'survived', inplace=True)
 # plot age
 sns.kdeplot(plot_df['age'].loc[plot_df['survived'] == 'survived'], shade=True, cut=0, label='survived')
 sns.kdeplot(plot_df['age'].loc[plot_df['survived'] == 'died'], shade=True, cut=0, label='died')
-sns.plt.show()
+plt.xlabel("Age")
+plt.show()
 
 # plot fare
 sns.kdeplot(plot_df['fare'].loc[plot_df['survived'] == 'survived'], shade=True, cut=0, label='survived')
 sns.kdeplot(plot_df['fare'].loc[plot_df['survived'] == 'died'], shade=True, cut=0, label='died')
+plt.xlabel("Fare")
 sns.plt.show()
 
 # Age:
@@ -90,14 +92,8 @@ titanic_df.loc[titanic_df['age'] < 15, 'age'] = 0
 titanic_df.loc[(titanic_df['age'] >= 15) & (titanic_df['age'] <= 60), 'age'] = 1
 titanic_df.loc[titanic_df['age'] > 60, 'age'] = 2
 
-
 plot_df['survived'].replace('died', 0, inplace=True)
 plot_df['survived'].replace('survived', 1, inplace=True)
-sns.factorplot(x="sex", y="survived", col="age", data=plot_df, kind="bar", ci=None)
-plt.show()
-
-sns.factorplot(x="age", y="survived", col="sex", data=plot_df, kind="bar", ci=None)
-plt.show()
 
 # chance of survival by age
 survival_by_age = plot_df[["age", "survived"]].groupby(['age'], as_index=False).mean()
@@ -105,5 +101,19 @@ ax = sns.barplot(x="age", y="survived", data=survival_by_age)
 ax.set(xlabel="Age", ylabel="Chance of survival")
 plt.show()
 
+# grouped by age
+ax = sns.factorplot(x="sex", y="survived", col="age", data=plot_df, kind="bar", ci=None, col_order=['child', 'middle-aged', 'old'])
+ax.set_axis_labels("", "Chance of survival").set_titles("{col_name}").set(ylim=(0, 1)).despine(left=True)
+plt.show()
+
+# grouped by sex
+ax = sns.factorplot(x="age", y="survived", col="sex", data=plot_df, kind="bar", ci=None, order=['child', 'middle-aged', 'old'])
+ax.set_axis_labels("", "Chance of survival").set_titles("{col_name}").despine(left=True)
+plt.show()
+
+# grouped by class
+ax = sns.factorplot(x="age", y="survived", col="pclass", data=plot_df, kind="bar", ci=None, order=['child', 'middle-aged', 'old'])
+ax.set_axis_labels("", "Chance of survival").set_titles("Class {col_name}").despine(left=True)
+plt.show()
 
 print(titanic_df.head(50))
