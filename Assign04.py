@@ -5,6 +5,9 @@ import seaborn as sns
 from sklearn import tree
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, classification_report
+from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.utils.validation import check_X_y, check_array
+from sklearn.utils.multiclass import unique_labels
 import matplotlib.pyplot as plt
 import pydotplus
 #%matplotlib inline
@@ -140,27 +143,155 @@ titanic_numeric.loc[titanic_numeric['fare'] >= 260, 'fare'] = 3
 # rm sibsp and parch
 titanic_numeric.drop(titanic_numeric.columns[[4, 5]], axis=1, inplace=True)
 titanic_df.drop(titanic_df.columns[[4, 5]], axis=1, inplace=True)
+titanic_categorical.drop(titanic_categorical.columns[[4, 5]], axis=1, inplace=True)
+
+
+"""
+Task 3
+"""
+
+"""
+- splitting feature
+- gini / information gain
+- threshold
+- children
+- leaf = boolean
+- decision
+- parent?
+- ???
+"""
+
+
+class DecisionTree(BaseEstimator, ClassifierMixin):
+    def __init__(self, measure_function="info_gain", demo_param='demo'):
+        self.demo_param = demo_param
+        self.calc_measure = None
+        self.root = None
+        if measure_function == "info_gain":
+            self.calc_measure = self.information_gain
+            # elif measure_function == "gini":
+            #     self.calc_measure = self.gini
+
+    def fit(self, x, y):
+        self.root = DecisionNode(x, y, self.calc_measure)
+        # Return the estimator
+        return self
+
+    def predict(self, x):
+        y = self.root.traverse(x)
+        return y
+
+    @staticmethod
+    def information_gain(data, split_data):
+        def log2(x):
+            from math import log
+            return log(x)/log(2)
+
+        def entropy(t):
+            results = t.value_counts()
+            # Now calculate the entropy
+            ent = 0
+            for r in results.keys():
+                p = float(results[r])/len(t)
+                ent = ent-p*log2(p)
+            return ent
+
+        gain = entropy(data)
+        for d in split_data:
+            gain -= (len(d)/len(data)) * entropy(d)
+        return gain
+
+
+class DecisionNode:
+    def __init__(self, x, y, calc_measure):
+        self.attributes = x.columns
+        self.data = x
+        self.results = y
+        self.children = None
+        self.decision_attribute = y.name
+        self.calc_measure = calc_measure
+        self.measure_of_impurity = 0
+        self.decision = y.value_counts().idxmax()
+        self.split_attribute = ""
+        self.decide()
+        # print("Node: {}".format(self.split_attribute))
+        # print("Decision: {}".format(self.decision))
+        # print(x)
+        # print(y)
+
+    def divide_set(self, attribute):
+        distinct_values = self.data[attribute].unique()
+        datasets = []
+        for v in distinct_values:
+            datasets.append(self.results[self.data[attribute] == v])
+        return datasets
+
+    def decide(self):
+        max_measure_of_impurity = 0
+        best_attribute = ""
+        for attribute in self.attributes:
+            measure_of_impurity = self.calc_measure(self.results, self.divide_set(attribute))
+            if max_measure_of_impurity < measure_of_impurity:
+                max_measure_of_impurity = measure_of_impurity
+                best_attribute = attribute
+        self.split_attribute = best_attribute
+        if max_measure_of_impurity > 0:
+            self.split(best_attribute)
+
+    def split(self, attribute):
+        distinct_values = self.data[attribute].unique()
+        if len(distinct_values) > 1:
+            self.children = {}
+            for v in distinct_values:
+                child_node = DecisionNode(self.data[self.data[attribute] == v], self.results[self.data[attribute] == v],
+                                          self.calc_measure)
+                self.children[v] = child_node
+
+    def traverse(self, x):
+        results = np.array([])
+        if self.children is None:
+            results = np.append(results, [self.decision for x_i in range(len(x))])
+        else:
+            distinct_values = x[self.split_attribute].unique()
+            if len(distinct_values) > 0:
+                for v in distinct_values:
+                    results = np.append(results, self.children[v].traverse(x[x[self.split_attribute] == v]))
+            else:
+                results = np.append(results, [self.decision for x_i in range(len(x))])
+        return results
+        # if self.children is None:
+        #     return self.decision
+        # results = []
+        # for _, x_i in x.iterrows():
+        #     print(x_i)
+        #     results.append(
+        #         self.children[
+        #             x_i[self.split_attribute]
+        #         ].traverse(x_i))
+        # return np.array(results)
+
+
 """
 Task 2
 """
 
 features = list(titanic_df.columns[1:])
 print(features)
-y = titanic_df["survived"]
-X = titanic_df[features]
+titanic_y = titanic_df["survived"]
+titanic_X = titanic_df[features]
 
-x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
+titanic_x_train, titanic_x_test, titanic_y_train, titanic_y_test = train_test_split(titanic_X, titanic_y, test_size=0.2,
+                                                                                    random_state=1, stratify=titanic_y)
 
 dt = DecisionTreeClassifier(min_samples_leaf=3, min_impurity_split=0.02)
-dt.fit(x_train, y_train)
-dt.get_params()
-res = dt.predict(x_test)
+dt.fit(titanic_x_train, titanic_y_train)
+titanic_res = dt.predict(titanic_x_test)
 
 print("Initial Values")
-print(accuracy_score(y, dt.predict(X)))
+print(accuracy_score(titanic_y, dt.predict(titanic_X)))
 print("Decision Tree Classifier")
-print(accuracy_score(y_test, res))
-print(classification_report(y_test, res))
+print(accuracy_score(titanic_y_test, titanic_res))
+print(classification_report(titanic_y_test, titanic_res))
 
 dot_data = tree.export_graphviz(dt, out_file=None,
                                 feature_names=features,
@@ -168,29 +299,48 @@ dot_data = tree.export_graphviz(dt, out_file=None,
                                 filled=True, rounded=True,
                                 special_characters=True)
 
-
 graph = pydotplus.graph_from_dot_data(dot_data)
 graph.write_png('tree.png')
 
+# our implementation
+
+features = list(titanic_numeric.columns[1:])
+print(features)
+titanic_y = titanic_numeric["survived"]
+titanic_X = titanic_numeric[features]
+
+titanic_x_train, titanic_x_test, titanic_y_train, titanic_y_test = train_test_split(titanic_X, titanic_y, test_size=0.2,
+                                                                                    random_state=1, stratify=titanic_y)
+
+dt = DecisionTree()
+dt.fit(titanic_x_train, titanic_y_train)
+titanic_res = dt.predict(titanic_x_test)
+
+print("Initial Values")
+print(accuracy_score(titanic_y, dt.predict(titanic_X)))
+print("Decision Tree Classifier")
+print(accuracy_score(titanic_y_test, titanic_res))
+print(classification_report(titanic_y_test, titanic_res))
 
 # numeric
 features = list(titanic_numeric.columns[1:])
 print(features)
-y = titanic_numeric["survived"]
-X = titanic_numeric[features]
+titanic_y = titanic_numeric["survived"]
+titanic_X = titanic_numeric[features]
 
-x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
+titanic_x_train, titanic_x_test, titanic_y_train, titanic_y_test = train_test_split(titanic_X, titanic_y, test_size=0.2,
+                                                                                    random_state=1, stratify=titanic_y)
 
-dt = DecisionTreeClassifier(min_samples_leaf=3, min_impurity_split=0.02)
-dt.fit(x_train, y_train)
+dt = DecisionTreeClassifier()
+dt.fit(titanic_x_train, titanic_y_train)
 
-res = dt.predict(x_test)
+titanic_res = dt.predict(titanic_x_test)
 
 print("Categorical Values via numeric representation")
-print(accuracy_score(y, dt.predict(X)))
+print(accuracy_score(titanic_y, dt.predict(titanic_X)))
 print("Decision Tree Classifier")
-print(accuracy_score(y_test, res))
-print(classification_report(y_test, res))
+print(accuracy_score(titanic_y_test, titanic_res))
+print(classification_report(titanic_y_test, titanic_res))
 
 dot_data = tree.export_graphviz(dt, out_file=None, feature_names=features, class_names=["died", "survived"],
                                 filled=True, rounded=True, special_characters=True)
@@ -202,5 +352,4 @@ graph.write_png('tree_numeric.png')
 """
  Image(graph.create_png())          in iPython
 """
-
 
