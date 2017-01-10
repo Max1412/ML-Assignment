@@ -2,13 +2,14 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
 import seaborn as sns
-sns.set_style('whitegrid')
 from sklearn import tree
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, classification_report
 import matplotlib.pyplot as plt
 import pydotplus
 #%matplotlib inline
+sns.set_style('whitegrid')
+
 
 """
 Task 1: Preprocessing
@@ -27,13 +28,13 @@ plot_df = titanic_df.copy()
 
 # Handling categorical values (replace by numerical values)
 # Sex: Male = 0, Female = 1
-titanic_df.replace('male', 0, inplace = True)
-titanic_df.replace('female', 1, inplace = True)
+titanic_df.replace('male', 0, inplace=True)
+titanic_df.replace('female', 1, inplace=True)
 
 # embarked: S = 0, C = 1, Q = 2
-titanic_df.replace('S', 0, inplace = True)
-titanic_df.replace('C', 1, inplace = True)
-titanic_df.replace('Q', 2, inplace = True)
+titanic_df.replace('S', 0, inplace=True)
+titanic_df.replace('C', 1, inplace=True)
+titanic_df.replace('Q', 2, inplace=True)
 
 plot_df['survived'].replace(0, 'died', inplace=True)
 plot_df['survived'].replace(1, 'survived', inplace=True)
@@ -41,7 +42,7 @@ plot_df['survived'].replace(1, 'survived', inplace=True)
 # plot survival count
 ax = sns.countplot(y="survived", data=plot_df)
 ax.set(ylabel='Survival')
-plt.show()
+#plt.show()
 
 plot_df['survived'].replace('died', 0, inplace=True)
 plot_df['survived'].replace('survived', 1, inplace=True)
@@ -50,19 +51,19 @@ plot_df['survived'].replace('survived', 1, inplace=True)
 survival_by_sex = plot_df[["sex", "survived"]].groupby(['sex'], as_index=False).mean()
 ax = sns.barplot(x="sex", y="survived", data=survival_by_sex)
 ax.set(xlabel="Sex", ylabel="Chance of survival")
-plt.show()
+#plt.show()
 
 # chance of survival by class
 survival_by_class = plot_df[["pclass", "survived"]].groupby(['pclass'], as_index=False).mean()
 ax = sns.barplot(x="pclass", y="survived", data=survival_by_class)
 ax.set(xlabel="Class", ylabel="Chance of survival")
-plt.show()
+#plt.show()
 
 # survival by port of embarkation
 survival_by_embarked = plot_df[["embarked", "survived"]].groupby(['embarked'], as_index=False).mean()
 ax = sns.barplot(x="embarked", y="survived", data=survival_by_embarked)
 ax.set(xlabel="Port of Embarkation", ylabel="Chance of survival")
-plt.show()
+#plt.show()
 
 plot_df['survived'].replace(0, 'died', inplace=True)
 plot_df['survived'].replace(1, 'survived', inplace=True)
@@ -71,16 +72,15 @@ plot_df['survived'].replace(1, 'survived', inplace=True)
 sns.kdeplot(plot_df['age'].loc[plot_df['survived'] == 'survived'], shade=True, cut=0, label='survived')
 sns.kdeplot(plot_df['age'].loc[plot_df['survived'] == 'died'], shade=True, cut=0, label='died')
 plt.xlabel("Age")
-plt.show()
+#plt.show()
 
 # plot fare
 sns.kdeplot(plot_df['fare'].loc[plot_df['survived'] == 'survived'], shade=True, cut=0, label='survived')
 sns.kdeplot(plot_df['fare'].loc[plot_df['survived'] == 'died'], shade=True, cut=0, label='died')
 plt.xlabel("Fare")
-sns.plt.show()
+#sns.plt.show()
 
 # Age:
-plot_df['age'] = plot_df['age'].astype(np.int64)
 plot_df.loc[plot_df['age'] < 15, 'age'] = 0
 plot_df.loc[(plot_df['age'] >= 15) & (plot_df['age'] <= 60), 'age'] = 1
 plot_df.loc[plot_df['age'] > 60, 'age'] = 2
@@ -95,22 +95,22 @@ plot_df['survived'].replace('survived', 1, inplace=True)
 survival_by_age = plot_df[["age", "survived"]].groupby(['age'], as_index=False).mean()
 ax = sns.barplot(x="age", y="survived", data=survival_by_age)
 ax.set(xlabel="Age", ylabel="Chance of survival")
-plt.show()
+#plt.show()
 
 # grouped by age
 ax = sns.factorplot(x="sex", y="survived", col="age", data=plot_df, kind="bar", ci=None, col_order=['child', 'middle-aged', 'old'])
 ax.set_axis_labels("", "Chance of survival").set_titles("{col_name}").set(ylim=(0, 1)).despine(left=True)
-plt.show()
+#plt.show()
 
 # grouped by sex
 ax = sns.factorplot(x="age", y="survived", col="sex", data=plot_df, kind="bar", ci=None, order=['child', 'middle-aged', 'old'])
 ax.set_axis_labels("", "Chance of survival").set_titles("{col_name}").despine(left=True)
-plt.show()
+#plt.show()
 
 # grouped by class
 ax = sns.factorplot(x="age", y="survived", col="pclass", data=plot_df, kind="bar", ci=None, order=['child', 'middle-aged', 'old'])
 ax.set_axis_labels("", "Chance of survival").set_titles("Class {col_name}").despine(left=True)
-plt.show()
+#plt.show()
 
 # create categorical dataframe
 titanic_categorical = plot_df.copy()
@@ -121,8 +121,8 @@ titanic_categorical['survived'].replace(1, 'survived', inplace=True)
 titanic_categorical['fare'] = titanic_categorical['fare']
 titanic_categorical.loc[titanic_categorical['fare'] == 0, 'fare'] = 0
 titanic_categorical.loc[(titanic_categorical['fare'] > 0) & (titanic_categorical['fare'] <= 32), 'fare'] = 1
-titanic_categorical.loc[(titanic_categorical['fare'] > 32) & (titanic_categorical['fare'] < 263), 'fare'] = 2
-titanic_categorical.loc[titanic_categorical['fare'] >= 263, 'fare'] = 3
+titanic_categorical.loc[(titanic_categorical['fare'] > 32) & (titanic_categorical['fare'] < 260), 'fare'] = 2
+titanic_categorical.loc[titanic_categorical['fare'] >= 260, 'fare'] = 3
 titanic_categorical['fare'].replace(0, "worker", inplace=True)
 titanic_categorical['fare'].replace(1, "low-range", inplace=True)
 titanic_categorical['fare'].replace(2, "mid-range", inplace=True)
@@ -134,12 +134,12 @@ titanic_numeric.loc[(titanic_numeric['age'] >= 15) & (titanic_numeric['age'] <= 
 titanic_numeric.loc[titanic_numeric['age'] > 60, 'age'] = 2
 titanic_numeric.loc[titanic_numeric['fare'] == 0, 'fare'] = 0
 titanic_numeric.loc[(titanic_numeric['fare'] > 0) & (titanic_numeric['fare'] <= 32), 'fare'] = 1
-titanic_numeric.loc[(titanic_numeric['fare'] > 32) & (titanic_numeric['fare'] < 263), 'fare'] = 2
-titanic_numeric.loc[titanic_numeric['fare'] >= 263, 'fare'] = 3
+titanic_numeric.loc[(titanic_numeric['fare'] > 32) & (titanic_numeric['fare'] < 260), 'fare'] = 2
+titanic_numeric.loc[titanic_numeric['fare'] >= 260, 'fare'] = 3
 
 # rm sibsp and parch
-titanic_numeric.drop(titanic_numeric.columns[[4,5]], axis=1, inplace=True)
-
+titanic_numeric.drop(titanic_numeric.columns[[4, 5]], axis=1, inplace=True)
+titanic_df.drop(titanic_df.columns[[4, 5]], axis=1, inplace=True)
 """
 Task 2
 """
@@ -149,20 +149,22 @@ print(features)
 y = titanic_df["survived"]
 X = titanic_df[features]
 
-x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1 )
+x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
 
-dt = DecisionTreeClassifier()
-dt.fit(X, y)
-
+dt = DecisionTreeClassifier(min_samples_leaf=3, min_impurity_split=0.02)
+dt.fit(x_train, y_train)
+dt.get_params()
 res = dt.predict(x_test)
 
+print("Initial Values")
 print(accuracy_score(y, dt.predict(X)))
 print("Decision Tree Classifier")
 print(accuracy_score(y_test, res))
+print(classification_report(y_test, res))
 
 dot_data = tree.export_graphviz(dt, out_file=None,
                                 feature_names=features,
-                                class_names=["died","survived"],
+                                class_names=["died", "survived"],
                                 filled=True, rounded=True,
                                 special_characters=True)
 
@@ -172,28 +174,26 @@ graph.write_png('tree.png')
 
 
 # numeric
-
 features = list(titanic_numeric.columns[1:])
 print(features)
 y = titanic_numeric["survived"]
 X = titanic_numeric[features]
 
-x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1 )
+x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
 
-dt = DecisionTreeClassifier()
-dt.fit(X, y)
+dt = DecisionTreeClassifier(min_samples_leaf=3, min_impurity_split=0.02)
+dt.fit(x_train, y_train)
 
 res = dt.predict(x_test)
 
+print("Categorical Values via numeric representation")
 print(accuracy_score(y, dt.predict(X)))
 print("Decision Tree Classifier")
 print(accuracy_score(y_test, res))
+print(classification_report(y_test, res))
 
-dot_data = tree.export_graphviz(dt, out_file=None,
-                         feature_names=features,
-                         class_names=["died","survived"],
-                         filled=True, rounded=True,
-                         special_characters=True)
+dot_data = tree.export_graphviz(dt, out_file=None, feature_names=features, class_names=["died", "survived"],
+                                filled=True, rounded=True, special_characters=True)
 
 
 graph = pydotplus.graph_from_dot_data(dot_data)
@@ -203,6 +203,4 @@ graph.write_png('tree_numeric.png')
  Image(graph.create_png())          in iPython
 """
 
-
-print(titanic_df.head(50))
 
