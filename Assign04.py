@@ -262,22 +262,17 @@ class DecisionNode:
             else:
                 values[r_i] = 0
         if self.children is None:
-            node_data = """{} [color=lightblue, label=\"Samples: {}
-            Values: {}
-            Decision: {}\"]
+            node_data = """{} [color=lightblue, label=\"Samples: {}\lValues: {}\lDecision: {}\l\"]
             """.format(node_id, self.results.size, values.values, self.decision)
             return node_data
         else:
-            node_data = """{} [label=\"Decision attribute: {}
-            Samples: {}
-            Values: {}
-            Decision: {}\"]
+            node_data = """{} [label=\"Decision attribute: {}\lSamples: {}\lValues: {}\lDecision: {}\l\"]
             """.format(node_id, self.split_attribute, self.results.size, values.values, self.decision)
             c_id = 0
-            for c in self.children.values():
+            for e, c in self.children.items():
                 c_id_str = node_id + str(c_id)
                 node_data += c.export(c_id_str, decision_counts)
-                node_data += "{} -> {}\n".format(node_id, c_id_str)
+                node_data += "{} -> {} [label=\"{}\"]\n".format(node_id, c_id_str, e)
                 c_id += 1
         return node_data + "\n"
 
@@ -340,8 +335,8 @@ graph.write_png('tree.png')
 
 features = list(titanic_numeric.columns[1:])
 print(features)
-titanic_y = titanic_numeric["survived"]
-titanic_X = titanic_numeric[features]
+titanic_y = titanic_categorical["survived"]
+titanic_X = titanic_categorical[features]
 
 titanic_x_train, titanic_x_test, titanic_y_train, titanic_y_test = train_test_split(titanic_X, titanic_y, test_size=0.2,
                                                                                     random_state=1, stratify=titanic_y)
@@ -353,9 +348,7 @@ titanic_res = dt.predict(titanic_x_test)
 graph = pydotplus.graph_from_dot_data(dt.export_tree("Tree"))
 graph.write_png("own_tree.png")
 
-print("Initial Values")
-print(accuracy_score(titanic_y_train, dt.predict(titanic_x_train)))
-print("Decision Tree Classifier")
+print("Own Decision Tree Classifier")
 print(accuracy_score(titanic_y_test, titanic_res))
 print(classification_report(titanic_y_test, titanic_res))
 
