@@ -5,9 +5,7 @@ import seaborn as sns
 from sklearn import tree
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, classification_report
-from sklearn.base import BaseEstimator, ClassifierMixin
-from sklearn.utils.validation import check_X_y, check_array
-from sklearn.utils.multiclass import unique_labels
+from sklearn.base import BaseEstimator
 import matplotlib.pyplot as plt
 import pydotplus
 #%matplotlib inline
@@ -162,7 +160,7 @@ Task 3
 """
 
 
-class DecisionTree(BaseEstimator, ClassifierMixin):
+class DecisionTree(BaseEstimator):
     def __init__(self, measure_function="info_gain", demo_param='demo'):
         self.demo_param = demo_param
         self.calc_measure = None
@@ -200,6 +198,13 @@ class DecisionTree(BaseEstimator, ClassifierMixin):
         for d in split_data:
             gain -= (len(d)/len(data)) * entropy(d)
         return gain
+
+    def export_tree(self, name):
+        graph_data = """digraph {} {{
+            node [shape=box, style=\"rounded,filled\"]""".format(name)
+        graph_data += self.root.export("0")
+        graph_data += "}"
+        return graph_data
 
 
 class DecisionNode:
@@ -246,6 +251,35 @@ class DecisionNode:
                 child_node = DecisionNode(self.data[self.data[attribute] == v], self.results[self.data[attribute] == v],
                                           self.calc_measure)
                 self.children[v] = child_node
+
+    def export(self, node_id, decision_counts=None):
+        if decision_counts is None:
+            decision_counts = self.results.value_counts()
+        values = decision_counts.copy()
+        for r_i, r in decision_counts.iteritems():
+            if r_i in self.results.value_counts(sort=False):
+                values[r_i] = self.results.value_counts(sort=False)[r_i]
+            else:
+                values[r_i] = 0
+        if self.children is None:
+            node_data = """{} [color=lightblue, label=\"Samples: {}
+            Values: {}
+            Decision: {}\"]
+            """.format(node_id, self.results.size, values.values, self.decision)
+            return node_data
+        else:
+            node_data = """{} [label=\"Decision attribute: {}
+            Samples: {}
+            Values: {}
+            Decision: {}\"]
+            """.format(node_id, self.split_attribute, self.results.size, values.values, self.decision)
+            c_id = 0
+            for c in self.children.values():
+                c_id_str = node_id + str(c_id)
+                node_data += c.export(c_id_str, decision_counts)
+                node_data += "{} -> {}\n".format(node_id, c_id_str)
+                c_id += 1
+        return node_data + "\n"
 
     def traverse(self, x):
         results = np.array([])
@@ -316,8 +350,11 @@ dt = DecisionTree()
 dt.fit(titanic_x_train, titanic_y_train)
 titanic_res = dt.predict(titanic_x_test)
 
+graph = pydotplus.graph_from_dot_data(dt.export_tree("Tree"))
+graph.write_png("own_tree.png")
+
 print("Initial Values")
-print(accuracy_score(titanic_y, dt.predict(titanic_X)))
+print(accuracy_score(titanic_y_train, dt.predict(titanic_x_train)))
 print("Decision Tree Classifier")
 print(accuracy_score(titanic_y_test, titanic_res))
 print(classification_report(titanic_y_test, titanic_res))
@@ -337,7 +374,7 @@ dt.fit(titanic_x_train, titanic_y_train)
 titanic_res = dt.predict(titanic_x_test)
 
 print("Categorical Values via numeric representation")
-print(accuracy_score(titanic_y, dt.predict(titanic_X)))
+print(accuracy_score(titanic_y_train, dt.predict(titanic_x_train)))
 print("Decision Tree Classifier")
 print(accuracy_score(titanic_y_test, titanic_res))
 print(classification_report(titanic_y_test, titanic_res))
