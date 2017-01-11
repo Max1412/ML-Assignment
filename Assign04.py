@@ -167,8 +167,8 @@ class DecisionTree(BaseEstimator):
         self.root = None
         if measure_function == "info_gain":
             self.calc_measure = self.information_gain
-            # elif measure_function == "gini":
-            #     self.calc_measure = self.gini
+        elif measure_function == "gini":
+            self.calc_measure = self.gini
 
     def fit(self, x, y):
         self.root = DecisionNode(x, y, self.calc_measure)
@@ -199,6 +199,14 @@ class DecisionTree(BaseEstimator):
             gain -= (len(d)/len(data)) * entropy(d)
         return gain
 
+    @staticmethod
+    def gini(data, split_data):
+        gini_impurity = 0
+        for d in split_data:
+            fi = (len(d)/len(data))
+            gini_impurity += fi * (1-fi)
+        return gini_impurity
+
     def export_tree(self, name):
         graph_data = """digraph {} {{
             node [shape=box, style=\"rounded,filled\"]""".format(name)
@@ -219,10 +227,6 @@ class DecisionNode:
         self.decision = y.value_counts().idxmax()
         self.split_attribute = ""
         self.decide()
-        # print("Node: {}".format(self.split_attribute))
-        # print("Decision: {}".format(self.decision))
-        # print(x)
-        # print(y)
 
     def divide_set(self, attribute):
         distinct_values = self.data[attribute].unique()
@@ -242,6 +246,7 @@ class DecisionNode:
         self.split_attribute = best_attribute
         if max_measure_of_impurity > 0:
             self.split(best_attribute)
+            self.measure_of_impurity = max_measure_of_impurity
 
     def split(self, attribute):
         distinct_values = self.data[attribute].unique()
@@ -262,12 +267,12 @@ class DecisionNode:
             else:
                 values[r_i] = 0
         if self.children is None:
-            node_data = """{} [color=lightblue, label=\"Samples: {}\lValues: {}\lDecision: {}\l\"]
-            """.format(node_id, self.results.size, values.values, self.decision)
+            node_data = """{} [color=lightblue, label=\"Measure of impurity: {}\lSamples: {}\lValues: {}\lDecision: {}\l\"]
+            """.format(node_id, round(self.measure_of_impurity, 2), self.results.size, values.values, self.decision)
             return node_data
         else:
-            node_data = """{} [label=\"Decision attribute: {}\lSamples: {}\lValues: {}\lDecision: {}\l\"]
-            """.format(node_id, self.split_attribute, self.results.size, values.values, self.decision)
+            node_data = """{} [label=\"Decision attribute: {}\lMeasure of impurity: {}\lSamples: {}\lValues: {}\lDecision: {}\l\"]
+            """.format(node_id, self.split_attribute, round(self.measure_of_impurity, 5), self.results.size, values.values, self.decision)
             c_id = 0
             for e, c in self.children.items():
                 c_id_str = node_id + str(c_id)
@@ -341,20 +346,30 @@ titanic_X = titanic_categorical[features]
 titanic_x_train, titanic_x_test, titanic_y_train, titanic_y_test = train_test_split(titanic_X, titanic_y, test_size=0.2,
                                                                                     random_state=1, stratify=titanic_y)
 
+dt = DecisionTree(measure_function="gini")
+dt.fit(titanic_x_train, titanic_y_train)
+titanic_res = dt.predict(titanic_x_test)
+
+graph = pydotplus.graph_from_dot_data(dt.export_tree("Tree"))
+graph.write_png("own_gini_tree.png")
+
+print("Own Decision Tree Classifier: Gini")
+print(accuracy_score(titanic_y_test, titanic_res))
+print(classification_report(titanic_y_test, titanic_res))
+
 dt = DecisionTree()
 dt.fit(titanic_x_train, titanic_y_train)
 titanic_res = dt.predict(titanic_x_test)
 
 graph = pydotplus.graph_from_dot_data(dt.export_tree("Tree"))
-graph.write_png("own_tree.png")
+graph.write_png("own_information_gain_tree.png")
 
-print("Own Decision Tree Classifier")
+print("Own Decision Tree Classifier: Information Gain")
 print(accuracy_score(titanic_y_test, titanic_res))
 print(classification_report(titanic_y_test, titanic_res))
 
 # numeric
 features = list(titanic_numeric.columns[1:])
-print(features)
 titanic_y = titanic_numeric["survived"]
 titanic_X = titanic_numeric[features]
 
