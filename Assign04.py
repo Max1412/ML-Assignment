@@ -1,4 +1,3 @@
-from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -6,6 +5,7 @@ from sklearn import tree
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.base import BaseEstimator
+from sklearn.model_selection import StratifiedKFold
 import matplotlib.pyplot as plt
 import pydotplus
 #%matplotlib inline
@@ -64,7 +64,7 @@ ax.set(xlabel="Class", ylabel="Chance of survival")
 survival_by_embarked = plot_df[["embarked", "survived"]].groupby(['embarked'], as_index=False).mean()
 ax = sns.barplot(x="embarked", y="survived", data=survival_by_embarked)
 ax.set(xlabel="Port of Embarkation", ylabel="Chance of survival")
-#plt.show()
+plt.show()
 
 plot_df['survived'].replace(0, 'died', inplace=True)
 plot_df['survived'].replace(1, 'survived', inplace=True)
@@ -73,21 +73,23 @@ plot_df['survived'].replace(1, 'survived', inplace=True)
 sns.kdeplot(plot_df['age'].loc[plot_df['survived'] == 'survived'], shade=True, cut=0, label='survived')
 sns.kdeplot(plot_df['age'].loc[plot_df['survived'] == 'died'], shade=True, cut=0, label='died')
 plt.xlabel("Age")
-#plt.show()
+plt.show()
 
 # plot fare
 sns.kdeplot(plot_df['fare'].loc[plot_df['survived'] == 'survived'], shade=True, cut=0, label='survived')
 sns.kdeplot(plot_df['fare'].loc[plot_df['survived'] == 'died'], shade=True, cut=0, label='died')
 plt.xlabel("Fare")
-#sns.plt.show()
+plt.show()
 
 # Age:
 plot_df.loc[plot_df['age'] < 15, 'age'] = 0
-plot_df.loc[(plot_df['age'] >= 15) & (plot_df['age'] <= 60), 'age'] = 1
-plot_df.loc[plot_df['age'] > 60, 'age'] = 2
+plot_df.loc[(plot_df['age'] >= 15) & (plot_df['age'] < 45), 'age'] = 1
+plot_df.loc[plot_df['age'] >= 45 & (plot_df['age'] < 60), 'age'] = 2
+plot_df.loc[plot_df['age'] >= 60, 'age'] = 3
 plot_df['age'].replace(0, "child", inplace=True)
-plot_df['age'].replace(1, "middle-aged", inplace=True)
-plot_df['age'].replace(2, "old", inplace=True)
+plot_df['age'].replace(1, "young-adult", inplace=True)
+plot_df['age'].replace(2, "middle-aged", inplace=True)
+plot_df['age'].replace(3, "old", inplace=True)
 
 plot_df['survived'].replace('died', 0, inplace=True)
 plot_df['survived'].replace('survived', 1, inplace=True)
@@ -122,21 +124,28 @@ titanic_categorical['survived'].replace(1, 'survived', inplace=True)
 titanic_categorical['fare'] = titanic_categorical['fare']
 titanic_categorical.loc[titanic_categorical['fare'] == 0, 'fare'] = 0
 titanic_categorical.loc[(titanic_categorical['fare'] > 0) & (titanic_categorical['fare'] <= 32), 'fare'] = 1
-titanic_categorical.loc[(titanic_categorical['fare'] > 32) & (titanic_categorical['fare'] < 260), 'fare'] = 2
-titanic_categorical.loc[titanic_categorical['fare'] >= 260, 'fare'] = 3
+titanic_categorical.loc[(titanic_categorical['fare'] > 32) & (titanic_categorical['fare'] <= 77), 'fare'] = 2
+titanic_categorical.loc[(titanic_categorical['fare'] > 77) & (titanic_categorical['fare'] <= 180), 'fare'] = 3
+titanic_categorical.loc[(titanic_categorical['fare'] > 180) & (titanic_categorical['fare'] <= 263), 'fare'] = 4
+titanic_categorical.loc[titanic_categorical['fare'] > 263, 'fare'] = 5
 titanic_categorical['fare'].replace(0, "worker", inplace=True)
 titanic_categorical['fare'].replace(1, "low-range", inplace=True)
-titanic_categorical['fare'].replace(2, "mid-range", inplace=True)
-titanic_categorical['fare'].replace(3, "high-range", inplace=True)
+titanic_categorical['fare'].replace(2, "lower-middle-range", inplace=True)
+titanic_categorical['fare'].replace(3, "upper-middle-range", inplace=True)
+titanic_categorical['fare'].replace(4, "lower-high-range", inplace=True)
+titanic_categorical['fare'].replace(5, "upper-high-range", inplace=True)
 
 titanic_numeric = titanic_df.copy()
 titanic_numeric.loc[titanic_numeric['age'] < 15, 'age'] = 0
-titanic_numeric.loc[(titanic_numeric['age'] >= 15) & (titanic_numeric['age'] <= 60), 'age'] = 1
-titanic_numeric.loc[titanic_numeric['age'] > 60, 'age'] = 2
+titanic_numeric.loc[(titanic_numeric['age'] >= 15) & (titanic_numeric['age'] < 45), 'age'] = 1
+titanic_numeric.loc[(titanic_numeric['age'] >= 45) & (titanic_numeric['age'] < 60), 'age'] = 2
+titanic_numeric.loc[titanic_numeric['age'] >= 60, 'age'] = 3
 titanic_numeric.loc[titanic_numeric['fare'] == 0, 'fare'] = 0
 titanic_numeric.loc[(titanic_numeric['fare'] > 0) & (titanic_numeric['fare'] <= 32), 'fare'] = 1
-titanic_numeric.loc[(titanic_numeric['fare'] > 32) & (titanic_numeric['fare'] < 260), 'fare'] = 2
-titanic_numeric.loc[titanic_numeric['fare'] >= 260, 'fare'] = 3
+titanic_numeric.loc[(titanic_numeric['fare'] > 32) & (titanic_numeric['fare'] <= 77), 'fare'] = 2
+titanic_numeric.loc[(titanic_numeric['fare'] > 77) & (titanic_numeric['fare'] <= 180), 'fare'] = 3
+titanic_numeric.loc[(titanic_numeric['fare'] > 180) & (titanic_numeric['fare'] <= 263), 'fare'] = 4
+titanic_numeric.loc[titanic_numeric['fare'] > 263, 'fare'] = 5
 
 # rm sibsp and parch
 titanic_numeric.drop(titanic_numeric.columns[[4, 5]], axis=1, inplace=True)
@@ -301,43 +310,70 @@ class DecisionNode:
             distinct_values = x[self.split_attribute].unique()
             if len(distinct_values) > 0:
                 for v in distinct_values:
-                    results = np.append(results, self.children[v].traverse(x[x[self.split_attribute] == v]))
+                    if v in self.children:
+                        results = np.append(results, self.children[v].traverse(x[x[self.split_attribute] == v]))
+                    else:
+                        results = np.append(results, [self.decision for x_i in range(len(x[x[self.split_attribute] == v]
+                                                                                         ))])
             else:
                 results = np.append(results, [self.decision for x_i in range(len(x))])
         return results
-        # if self.children is None:
-        #     return self.decision
-        # results = []
-        # for _, x_i in x.iterrows():
-        #     print(x_i)
-        #     results.append(
-        #         self.children[
-        #             x_i[self.split_attribute]
-        #         ].traverse(x_i))
-        # return np.array(results)
 
 
 """
 Task 2
 """
 
+
+def cross_val(classifier, splits, data, results):
+    skf = StratifiedKFold(n_splits=splits)
+    scores = np.array([])
+    aggregated_classifier_results = np.array([])
+    aggregated_results = np.array([])
+    for train, test in skf.split(data, results):
+        data_train = data.iloc[train]
+        results_train = results.iloc[train]
+        data_test = data.iloc[test]
+        results_test = results.iloc[test]
+        aggregated_results = np.append(aggregated_results, results_test)
+        classifier.fit(data_train, results_train)
+        classifier_result = dt.predict(data_test)
+        aggregated_classifier_results = np.append(aggregated_classifier_results, classifier_result)
+        score = accuracy_score(results_test, classifier_result)
+        scores = np.append(scores, score)
+    print(scores)
+    print("Accuracy: {0:.2f} (+/- {1:.2f})".format(scores.mean(), scores.std()))
+    print(classification_report(aggregated_results, aggregated_classifier_results))
+
+# our implementation
+
+features = list(titanic_categorical.columns[1:])
+titanic_y = titanic_categorical["survived"]
+titanic_X = titanic_categorical[features]
+
+print("Own Decision Tree Classifier: Gini")
+dt = DecisionTree(measure_function="gini")
+cross_val(dt, 10, titanic_X, titanic_y)
+
+graph = pydotplus.graph_from_dot_data(dt.export_tree("Tree"))
+graph.write_png("own_gini_tree.png")
+
+# Information gain
+dt = DecisionTree()
+print("Own Decision Tree Classifier: Information Gain")
+cross_val(dt, 10, titanic_X, titanic_y)
+
+graph = pydotplus.graph_from_dot_data(dt.export_tree("Tree"))
+graph.write_png("own_information_gain_tree.png")
+
+# given data
 features = list(titanic_df.columns[1:])
-print(features)
 titanic_y = titanic_df["survived"]
 titanic_X = titanic_df[features]
 
-titanic_x_train, titanic_x_test, titanic_y_train, titanic_y_test = train_test_split(titanic_X, titanic_y, test_size=0.2,
-                                                                                    random_state=1, stratify=titanic_y)
-
-dt = DecisionTreeClassifier(min_samples_leaf=3, min_impurity_split=0.02)
-dt.fit(titanic_x_train, titanic_y_train)
-titanic_res = dt.predict(titanic_x_test)
-
-print("Initial Values")
-print(accuracy_score(titanic_y, dt.predict(titanic_X)))
 print("Decision Tree Classifier")
-print(accuracy_score(titanic_y_test, titanic_res))
-print(classification_report(titanic_y_test, titanic_res))
+dt = DecisionTreeClassifier()
+cross_val(dt, 10, titanic_X, titanic_y)
 
 dot_data = tree.export_graphviz(dt, out_file=None,
                                 feature_names=features,
@@ -348,56 +384,15 @@ dot_data = tree.export_graphviz(dt, out_file=None,
 graph = pydotplus.graph_from_dot_data(dot_data)
 graph.write_png('tree.png')
 
-# our implementation
-
-features = list(titanic_numeric.columns[1:])
-print(features)
-titanic_y = titanic_categorical["survived"]
-titanic_X = titanic_categorical[features]
-
-titanic_x_train, titanic_x_test, titanic_y_train, titanic_y_test = train_test_split(titanic_X, titanic_y, test_size=0.2,
-                                                                                    random_state=1, stratify=titanic_y)
-
-dt = DecisionTree(measure_function="gini")
-dt.fit(titanic_x_train, titanic_y_train)
-titanic_res = dt.predict(titanic_x_test)
-
-graph = pydotplus.graph_from_dot_data(dt.export_tree("Tree"))
-graph.write_png("own_gini_tree.png")
-
-print("Own Decision Tree Classifier: Gini")
-print(accuracy_score(titanic_y_test, titanic_res))
-print(classification_report(titanic_y_test, titanic_res))
-
-dt = DecisionTree()
-dt.fit(titanic_x_train, titanic_y_train)
-titanic_res = dt.predict(titanic_x_test)
-
-graph = pydotplus.graph_from_dot_data(dt.export_tree("Tree"))
-graph.write_png("own_information_gain_tree.png")
-
-print("Own Decision Tree Classifier: Information Gain")
-print(accuracy_score(titanic_y_test, titanic_res))
-print(classification_report(titanic_y_test, titanic_res))
-
 # numeric
 features = list(titanic_numeric.columns[1:])
 titanic_y = titanic_numeric["survived"]
 titanic_X = titanic_numeric[features]
 
-titanic_x_train, titanic_x_test, titanic_y_train, titanic_y_test = train_test_split(titanic_X, titanic_y, test_size=0.2,
-                                                                                    random_state=1, stratify=titanic_y)
-
 dt = DecisionTreeClassifier()
-dt.fit(titanic_x_train, titanic_y_train)
-
-titanic_res = dt.predict(titanic_x_test)
-
-print("Categorical Values via numeric representation")
-print(accuracy_score(titanic_y_train, dt.predict(titanic_x_train)))
 print("Decision Tree Classifier")
-print(accuracy_score(titanic_y_test, titanic_res))
-print(classification_report(titanic_y_test, titanic_res))
+print("Categorical Values via numeric representation")
+cross_val(dt, 10, titanic_X, titanic_y)
 
 dot_data = tree.export_graphviz(dt, out_file=None, feature_names=features, class_names=["died", "survived"],
                                 filled=True, rounded=True, special_characters=True)
