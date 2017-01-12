@@ -165,19 +165,40 @@ class DecisionTree(BaseEstimator):
         self.demo_param = demo_param
         self.calc_measure = None
         self.root = None
-        if measure_function == "info_gain":
-            self.calc_measure = self.information_gain
-        elif measure_function == "gini":
-            self.calc_measure = self.gini
+        self.measure_function = measure_function
 
     def fit(self, x, y):
-        self.root = DecisionNode(x, y, self.calc_measure)
+        self.root = DecisionNode(x, y, self.measure_function)
         # Return the estimator
         return self
 
     def predict(self, x):
         y = self.root.traverse(x)
         return y
+
+    def export_tree(self, name):
+        graph_data = """digraph {} {{
+            node [shape=box, style=\"rounded,filled\"]""".format(name)
+        graph_data += self.root.export("0")
+        graph_data += "}"
+        return graph_data
+
+
+class DecisionNode:
+    def __init__(self, x, y, measure_function="info_gain"):
+        self.attributes = x.columns
+        self.data = x
+        self.results = y
+        self.children = None
+        self.decision_attribute = y.name
+        self.measure_function = measure_function
+        self.calc_measure = self.information_gain
+        if measure_function == "gini":
+            self.calc_measure = self.gini
+        self.measure_of_impurity = 0
+        self.decision = y.value_counts().idxmax()
+        self.split_attribute = ""
+        self.decide()
 
     @staticmethod
     def information_gain(data, split_data):
@@ -201,32 +222,15 @@ class DecisionTree(BaseEstimator):
 
     @staticmethod
     def gini(data, split_data):
-        gini_impurity = 0
+        gini_index = 0
         for d in split_data:
-            fi = (len(d)/len(data))
-            gini_impurity += fi * (1-fi)
-        return gini_impurity
-
-    def export_tree(self, name):
-        graph_data = """digraph {} {{
-            node [shape=box, style=\"rounded,filled\"]""".format(name)
-        graph_data += self.root.export("0")
-        graph_data += "}"
-        return graph_data
-
-
-class DecisionNode:
-    def __init__(self, x, y, calc_measure):
-        self.attributes = x.columns
-        self.data = x
-        self.results = y
-        self.children = None
-        self.decision_attribute = y.name
-        self.calc_measure = calc_measure
-        self.measure_of_impurity = 0
-        self.decision = y.value_counts().idxmax()
-        self.split_attribute = ""
-        self.decide()
+            l = (len(d)/len(data))
+            decision_value_counts = d.value_counts().values
+            gini_impurity = 1
+            for d_v_c in decision_value_counts:
+                gini_impurity -= d_v_c/len(d) * d_v_c/len(d)
+            gini_index += l * gini_impurity
+        return gini_index
 
     def divide_set(self, attribute):
         distinct_values = self.data[attribute].unique()
@@ -236,17 +240,25 @@ class DecisionNode:
         return datasets
 
     def decide(self):
-        max_measure_of_impurity = 0
+        import sys
+        deciding_measure_of_impurity = -sys.maxsize - 1
+        if self.measure_function == "gini":
+            deciding_measure_of_impurity = sys.maxsize
         best_attribute = ""
         for attribute in self.attributes:
             measure_of_impurity = self.calc_measure(self.results, self.divide_set(attribute))
-            if max_measure_of_impurity < measure_of_impurity:
-                max_measure_of_impurity = measure_of_impurity
-                best_attribute = attribute
-        self.split_attribute = best_attribute
-        if max_measure_of_impurity > 0:
+            if self.measure_function == "gini":
+                if deciding_measure_of_impurity > measure_of_impurity:
+                    deciding_measure_of_impurity = measure_of_impurity
+                    best_attribute = attribute
+            else:
+                if deciding_measure_of_impurity < measure_of_impurity:
+                    deciding_measure_of_impurity = measure_of_impurity
+                    best_attribute = attribute
+        if deciding_measure_of_impurity > 0:
+            self.split_attribute = best_attribute
             self.split(best_attribute)
-            self.measure_of_impurity = max_measure_of_impurity
+            self.measure_of_impurity = deciding_measure_of_impurity
 
     def split(self, attribute):
         distinct_values = self.data[attribute].unique()
