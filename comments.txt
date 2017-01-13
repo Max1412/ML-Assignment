@@ -1,0 +1,34 @@
+Task 1:
+- Short summary of your observation:
+	- Feature "sex" is very important -> women have a significant chance of survival (plot)
+	- Children have a higher chance of survival
+		- but children's survival chances do not depend on sex as opposed to adults
+		- another anomaly: Children in class 2 have higher survival chances than in class 1/3
+	- Feature "age" is important -> the younger, the higher the survival chances
+	- Passenger class is also important: Class 1 Passengers survive more often
+	- 
+
+Task 2:
+	- accuracy ~ 71% +/- 11% -> print im notebook
+	- Compare the performance to an appropriate baseline
+		- what is the baseline? sklearn is already "standard"
+	- Interpret and discuss feature importance
+		- First (-> most important) split attirbute is "sex" -> just as predicted in Task 1
+		- also highly ranked split attributes: "pclass", "age" -> also predicted in Task 1
+	"women and children first"
+	
+Task 3:
+	- Compare the results:
+		- Our algorithm is way slower (Cause? Maybe: No "tree library" used)
+		- Our tree looks nicer because of non-binary splits
+		- accuracy is nearly as good as the accuracy form the sklearn classifier
+		- however, our standard deviation is a lot worse (+- 17- 19 % depending on preprocessing)
+		- Usually, one would use different preprocessing for the different implementations:
+			- Our implementation uses categorical values and creates as much branches
+			  as there are different values for an attribute
+				- Numerical values should be grouped in preprocessing
+			- The sklearn implementation uses numerical values and finds thresholds
+			  for binary splits
+				- Numerical values should be left as-is and categorical values
+				  have to be eliminated
+		
