@@ -43,7 +43,7 @@ plot_df['survived'].replace(1, 'survived', inplace=True)
 # plot survival count
 ax = sns.countplot(y="survived", data=plot_df)
 ax.set(ylabel='Survival')
-#plt.show()
+plt.show()
 
 plot_df['survived'].replace('died', 0, inplace=True)
 plot_df['survived'].replace('survived', 1, inplace=True)
@@ -52,13 +52,13 @@ plot_df['survived'].replace('survived', 1, inplace=True)
 survival_by_sex = plot_df[["sex", "survived"]].groupby(['sex'], as_index=False).mean()
 ax = sns.barplot(x="sex", y="survived", data=survival_by_sex)
 ax.set(xlabel="Sex", ylabel="Chance of survival")
-#plt.show()
+plt.show()
 
 # chance of survival by class
 survival_by_class = plot_df[["pclass", "survived"]].groupby(['pclass'], as_index=False).mean()
 ax = sns.barplot(x="pclass", y="survived", data=survival_by_class)
 ax.set(xlabel="Class", ylabel="Chance of survival")
-#plt.show()
+plt.show()
 
 # survival by port of embarkation
 survival_by_embarked = plot_df[["embarked", "survived"]].groupby(['embarked'], as_index=False).mean()
@@ -69,23 +69,35 @@ plt.show()
 plot_df['survived'].replace(0, 'died', inplace=True)
 plot_df['survived'].replace(1, 'survived', inplace=True)
 
+# plot parch
+sns.distplot(plot_df['parch'].loc[plot_df['survived'] == 'survived'], label='survived', bins=40)
+sns.distplot(plot_df['parch'].loc[plot_df['survived'] == 'died'], label='died', bins=40)
+plt.xlabel("Parent Child")
+plt.show()
+
+# plot sibsp
+sns.distplot(plot_df['sibsp'].loc[plot_df['survived'] == 'survived'], label='survived', bins=40)
+sns.distplot(plot_df['sibsp'].loc[plot_df['survived'] == 'died'], label='died', bins=40)
+plt.xlabel("Sibling Spouse")
+plt.show()
+
 # plot age
-sns.kdeplot(plot_df['age'].loc[plot_df['survived'] == 'survived'], shade=True, cut=0, label='survived')
-sns.kdeplot(plot_df['age'].loc[plot_df['survived'] == 'died'], shade=True, cut=0, label='died')
+sns.distplot(plot_df['age'].loc[plot_df['survived'] == 'survived'], label='survived', bins=40)
+sns.distplot(plot_df['age'].loc[plot_df['survived'] == 'died'], label='died', bins=40)
 plt.xlabel("Age")
 plt.show()
 
 # plot fare
-sns.kdeplot(plot_df['fare'].loc[plot_df['survived'] == 'survived'], shade=True, cut=0, label='survived')
-sns.kdeplot(plot_df['fare'].loc[plot_df['survived'] == 'died'], shade=True, cut=0, label='died')
+sns.distplot(plot_df['fare'].loc[plot_df['survived'] == 'survived'], label='survived', bins=40)
+sns.distplot(plot_df['fare'].loc[plot_df['survived'] == 'died'], label='died', bins=40)
 plt.xlabel("Fare")
 plt.show()
 
 # Age:
 plot_df.loc[plot_df['age'] < 15, 'age'] = 0
-plot_df.loc[(plot_df['age'] >= 15) & (plot_df['age'] < 45), 'age'] = 1
-plot_df.loc[plot_df['age'] >= 45 & (plot_df['age'] < 60), 'age'] = 2
-plot_df.loc[plot_df['age'] >= 60, 'age'] = 3
+plot_df.loc[(plot_df['age'] >= 15) & (plot_df['age'] < 32), 'age'] = 1
+plot_df.loc[(plot_df['age'] >= 32) & (plot_df['age'] < 63), 'age'] = 2
+plot_df.loc[plot_df['age'] >= 63, 'age'] = 3
 plot_df['age'].replace(0, "child", inplace=True)
 plot_df['age'].replace(1, "young-adult", inplace=True)
 plot_df['age'].replace(2, "middle-aged", inplace=True)
@@ -96,24 +108,27 @@ plot_df['survived'].replace('survived', 1, inplace=True)
 
 # chance of survival by age
 survival_by_age = plot_df[["age", "survived"]].groupby(['age'], as_index=False).mean()
-ax = sns.barplot(x="age", y="survived", data=survival_by_age)
+ax = sns.barplot(x="age", y="survived", data=survival_by_age, order=['child', 'young-adult', 'middle-aged', 'old'])
 ax.set(xlabel="Age", ylabel="Chance of survival")
-#plt.show()
+plt.show()
 
 # grouped by age
-ax = sns.factorplot(x="sex", y="survived", col="age", data=plot_df, kind="bar", ci=None, col_order=['child', 'middle-aged', 'old'])
+ax = sns.factorplot(x="sex", y="survived", col="age", data=plot_df, kind="bar",
+                    ci=None, col_order=['child', 'young-adult', 'middle-aged', 'old'])
 ax.set_axis_labels("", "Chance of survival").set_titles("{col_name}").set(ylim=(0, 1)).despine(left=True)
-#plt.show()
+sns.plt.show()
 
 # grouped by sex
-ax = sns.factorplot(x="age", y="survived", col="sex", data=plot_df, kind="bar", ci=None, order=['child', 'middle-aged', 'old'])
+ax = sns.factorplot(x="age", y="survived", col="sex", data=plot_df, kind="bar",
+                    ci=None, order=['child', 'young-adult', 'middle-aged', 'old'])
 ax.set_axis_labels("", "Chance of survival").set_titles("{col_name}").despine(left=True)
-#plt.show()
+sns.plt.show()
 
 # grouped by class
-ax = sns.factorplot(x="age", y="survived", col="pclass", data=plot_df, kind="bar", ci=None, order=['child', 'middle-aged', 'old'])
+ax = sns.factorplot(x="age", y="survived", col="pclass", data=plot_df, kind="bar",
+                    ci=None, order=['child', 'young-adult', 'middle-aged', 'old'])
 ax.set_axis_labels("", "Chance of survival").set_titles("Class {col_name}").despine(left=True)
-#plt.show()
+sns.plt.show()
 
 # create categorical dataframe
 titanic_categorical = plot_df.copy()
@@ -122,36 +137,102 @@ titanic_categorical['survived'].replace(0, 'died', inplace=True)
 titanic_categorical['survived'].replace(1, 'survived', inplace=True)
 
 titanic_categorical['fare'] = titanic_categorical['fare']
-titanic_categorical.loc[titanic_categorical['fare'] == 0, 'fare'] = 0
-titanic_categorical.loc[(titanic_categorical['fare'] > 0) & (titanic_categorical['fare'] <= 32), 'fare'] = 1
-titanic_categorical.loc[(titanic_categorical['fare'] > 32) & (titanic_categorical['fare'] <= 77), 'fare'] = 2
-titanic_categorical.loc[(titanic_categorical['fare'] > 77) & (titanic_categorical['fare'] <= 180), 'fare'] = 3
-titanic_categorical.loc[(titanic_categorical['fare'] > 180) & (titanic_categorical['fare'] <= 263), 'fare'] = 4
-titanic_categorical.loc[titanic_categorical['fare'] > 263, 'fare'] = 5
-titanic_categorical['fare'].replace(0, "worker", inplace=True)
-titanic_categorical['fare'].replace(1, "low-range", inplace=True)
-titanic_categorical['fare'].replace(2, "lower-middle-range", inplace=True)
-titanic_categorical['fare'].replace(3, "upper-middle-range", inplace=True)
-titanic_categorical['fare'].replace(4, "lower-high-range", inplace=True)
-titanic_categorical['fare'].replace(5, "upper-high-range", inplace=True)
+titanic_categorical.loc[(titanic_categorical['fare'] < 6), 'fare'] = 0
+titanic_categorical.loc[(titanic_categorical['fare'] >= 6) & (titanic_categorical['fare'] <= 13), 'fare'] = 1
+titanic_categorical.loc[(titanic_categorical['fare'] > 13) & (titanic_categorical['fare'] <= 32), 'fare'] = 2
+titanic_categorical.loc[(titanic_categorical['fare'] > 32) & (titanic_categorical['fare'] <= 260), 'fare'] = 3
+titanic_categorical.loc[(titanic_categorical['fare'] > 260), 'fare'] = 4
+titanic_categorical['fare'].replace(0, "low-range", inplace=True)
+titanic_categorical['fare'].replace(1, "mid-range", inplace=True)
+titanic_categorical['fare'].replace(2, "high-range", inplace=True)
+titanic_categorical['fare'].replace(3, "high-range2", inplace=True)
 
 titanic_numeric = titanic_df.copy()
-titanic_numeric.loc[titanic_numeric['age'] < 15, 'age'] = 0
-titanic_numeric.loc[(titanic_numeric['age'] >= 15) & (titanic_numeric['age'] < 45), 'age'] = 1
-titanic_numeric.loc[(titanic_numeric['age'] >= 45) & (titanic_numeric['age'] < 60), 'age'] = 2
-titanic_numeric.loc[titanic_numeric['age'] >= 60, 'age'] = 3
-titanic_numeric.loc[titanic_numeric['fare'] == 0, 'fare'] = 0
-titanic_numeric.loc[(titanic_numeric['fare'] > 0) & (titanic_numeric['fare'] <= 32), 'fare'] = 1
-titanic_numeric.loc[(titanic_numeric['fare'] > 32) & (titanic_numeric['fare'] <= 77), 'fare'] = 2
-titanic_numeric.loc[(titanic_numeric['fare'] > 77) & (titanic_numeric['fare'] <= 180), 'fare'] = 3
-titanic_numeric.loc[(titanic_numeric['fare'] > 180) & (titanic_numeric['fare'] <= 263), 'fare'] = 4
-titanic_numeric.loc[titanic_numeric['fare'] > 263, 'fare'] = 5
+titanic_numeric.loc[titanic_numeric['age'] < 9, 'age'] = 0
+titanic_numeric.loc[(titanic_numeric['age'] >= 9) & (titanic_numeric['age'] < 32), 'age'] = 1
+titanic_numeric.loc[(titanic_numeric['age'] >= 32) & (titanic_numeric['age'] < 74), 'age'] = 2
+titanic_numeric.loc[titanic_numeric['age'] >= 74, 'age'] = 3
+titanic_numeric.loc[(titanic_numeric['fare'] <= 5), 'fare'] = 0
+titanic_numeric.loc[(titanic_numeric['fare'] > 15) & (titanic_numeric['fare'] <= 52), 'fare'] = 1
+titanic_numeric.loc[titanic_numeric['fare'] > 52, 'fare'] = 2
 
 # rm sibsp and parch
-titanic_numeric.drop(titanic_numeric.columns[[4, 5]], axis=1, inplace=True)
-titanic_df.drop(titanic_df.columns[[4, 5]], axis=1, inplace=True)
-titanic_categorical.drop(titanic_categorical.columns[[4, 5]], axis=1, inplace=True)
+# titanic_numeric.drop(titanic_numeric.columns[[4, 5]], axis=1, inplace=True)
+# titanic_df.drop(titanic_df.columns[[4, 5]], axis=1, inplace=True)
+# titanic_categorical.drop(titanic_categorical.columns[[4, 5]], axis=1, inplace=True)
+titanic_numeric.loc[titanic_numeric['parch'] > 0, 'parch'] = 1
+titanic_categorical.loc[titanic_categorical['parch'] > 0, 'parch'] = 1
 
+# titanic_numeric.loc[titanic_numeric['sibsp'] <= 1, 'sibsp'] = 0
+# titanic_numeric.loc[(titanic_numeric['sibsp'] < 4), 'sibsp'] = 0
+titanic_numeric.loc[titanic_numeric['sibsp'] >= 2, 'sibsp'] = 2
+# titanic_categorical.loc[titanic_categorical['sibsp'] < 4, 'sibsp'] = 0
+titanic_categorical.loc[titanic_categorical['sibsp'] >= 2, 'sibsp'] = 2
+
+
+"""
+Task 2
+"""
+
+
+def cross_val(classifier, splits, data, results):
+    skf = StratifiedKFold(n_splits=splits)
+    scores = np.array([])
+    aggregated_classifier_results = np.array([])
+    aggregated_results = np.array([])
+    for train, test in skf.split(data, results):
+        data_train = data.iloc[train]
+        results_train = results.iloc[train]
+        data_test = data.iloc[test]
+        results_test = results.iloc[test]
+        aggregated_results = np.append(aggregated_results, results_test)
+        classifier.fit(data_train, results_train)
+        classifier_result = dt.predict(data_test)
+        aggregated_classifier_results = np.append(aggregated_classifier_results, classifier_result)
+        score = accuracy_score(results_test, classifier_result)
+        scores = np.append(scores, score)
+    print(scores)
+    print("Accuracy: {0:.2f} (+/- {1:.2f})".format(scores.mean(), scores.std()))
+    print(classification_report(aggregated_results, aggregated_classifier_results))
+
+# given data
+features = list(titanic_df.columns[1:])
+titanic_y = titanic_df["survived"]
+titanic_X = titanic_df[features]
+
+print("Decision Tree Classifier")
+dt = DecisionTreeClassifier()
+cross_val(dt, 10, titanic_X, titanic_y)
+
+dot_data = tree.export_graphviz(dt, out_file=None,
+                                feature_names=features,
+                                class_names=["died", "survived"],
+                                filled=True, rounded=True,
+                                special_characters=True)
+
+graph = pydotplus.graph_from_dot_data(dot_data)
+graph.write_png('tree.png')
+
+# numeric
+features = list(titanic_numeric.columns[1:])
+titanic_y = titanic_numeric["survived"]
+titanic_X = titanic_numeric[features]
+
+dt = DecisionTreeClassifier()
+print("Decision Tree Classifier")
+print("Categorical Values via numeric representation")
+cross_val(dt, 10, titanic_X, titanic_y)
+
+dot_data = tree.export_graphviz(dt, out_file=None, feature_names=features, class_names=["died", "survived"],
+                                filled=True, rounded=True, special_characters=True)
+
+
+graph = pydotplus.graph_from_dot_data(dot_data)
+graph.write_png('tree_numeric.png')
+
+"""
+ Image(graph.create_png())          in iPython
+"""
 
 """
 Task 3
@@ -320,33 +401,6 @@ class DecisionNode:
         return results
 
 
-"""
-Task 2
-"""
-
-
-def cross_val(classifier, splits, data, results):
-    skf = StratifiedKFold(n_splits=splits)
-    scores = np.array([])
-    aggregated_classifier_results = np.array([])
-    aggregated_results = np.array([])
-    for train, test in skf.split(data, results):
-        data_train = data.iloc[train]
-        results_train = results.iloc[train]
-        data_test = data.iloc[test]
-        results_test = results.iloc[test]
-        aggregated_results = np.append(aggregated_results, results_test)
-        classifier.fit(data_train, results_train)
-        classifier_result = dt.predict(data_test)
-        aggregated_classifier_results = np.append(aggregated_classifier_results, classifier_result)
-        score = accuracy_score(results_test, classifier_result)
-        scores = np.append(scores, score)
-    print(scores)
-    print("Accuracy: {0:.2f} (+/- {1:.2f})".format(scores.mean(), scores.std()))
-    print(classification_report(aggregated_results, aggregated_classifier_results))
-
-# our implementation
-
 features = list(titanic_categorical.columns[1:])
 titanic_y = titanic_categorical["survived"]
 titanic_X = titanic_categorical[features]
@@ -366,42 +420,4 @@ cross_val(dt, 10, titanic_X, titanic_y)
 graph = pydotplus.graph_from_dot_data(dt.export_tree("Tree"))
 graph.write_png("own_information_gain_tree.png")
 
-# given data
-features = list(titanic_df.columns[1:])
-titanic_y = titanic_df["survived"]
-titanic_X = titanic_df[features]
-
-print("Decision Tree Classifier")
-dt = DecisionTreeClassifier()
-cross_val(dt, 10, titanic_X, titanic_y)
-
-dot_data = tree.export_graphviz(dt, out_file=None,
-                                feature_names=features,
-                                class_names=["died", "survived"],
-                                filled=True, rounded=True,
-                                special_characters=True)
-
-graph = pydotplus.graph_from_dot_data(dot_data)
-graph.write_png('tree.png')
-
-# numeric
-features = list(titanic_numeric.columns[1:])
-titanic_y = titanic_numeric["survived"]
-titanic_X = titanic_numeric[features]
-
-dt = DecisionTreeClassifier()
-print("Decision Tree Classifier")
-print("Categorical Values via numeric representation")
-cross_val(dt, 10, titanic_X, titanic_y)
-
-dot_data = tree.export_graphviz(dt, out_file=None, feature_names=features, class_names=["died", "survived"],
-                                filled=True, rounded=True, special_characters=True)
-
-
-graph = pydotplus.graph_from_dot_data(dot_data)
-graph.write_png('tree_numeric.png')
-
-"""
- Image(graph.create_png())          in iPython
-"""
 
